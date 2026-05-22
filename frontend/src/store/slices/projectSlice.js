@@ -1,104 +1,24 @@
 import { createSlice } from '@reduxjs/toolkit'
 
-const TEAM_MEMBERS = [
-  { id: 'user-2', name: 'Sarah Chen', avatar: 'SC', avatarColor: '#0052CC', role: 'EMPLOYEE', title: 'Senior Frontend Developer' },
-  { id: 'user-4', name: 'James Wilson', avatar: 'JW', avatarColor: '#00875A', role: 'EMPLOYEE', title: 'Backend Developer' },
-  { id: 'user-5', name: 'Priya Patel', avatar: 'PP', avatarColor: '#6554C0', role: 'EMPLOYEE', title: 'UI/UX Designer' },
-  { id: 'user-6', name: 'Tom Bradley', avatar: 'TB', avatarColor: '#FF5630', role: 'EMPLOYEE', title: 'QA Engineer' },
-  { id: 'user-7', name: 'Emma Davis', avatar: 'ED', avatarColor: '#FF991F', role: 'EMPLOYEE', title: 'DevOps Engineer' },
-]
+const getDynamicApiUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+  return `http://${hostname}:8080`
+}
 
-const INITIAL_PROJECTS = [
-  {
-    id: 'proj-1',
-    name: 'Website Redesign',
-    key: 'WR',
-    color: '#0052CC',
-    description: 'Complete redesign of the company website with modern UI/UX principles and improved performance metrics.',
-    status: 'IN_PROGRESS',
-    priority: 'HIGH',
-    progress: 65,
-    startDate: '2024-01-15',
-    endDate: '2024-04-30',
-    budget: 45000,
-    members: ['user-2', 'user-5', 'user-1'],
-    owner: 'user-1',
-    taskCount: { total: 24, completed: 16, inProgress: 5, todo: 3 },
-    tags: ['Design', 'Frontend'],
-  },
-  {
-    id: 'proj-2',
-    name: 'Mobile App v2',
-    key: 'MA',
-    color: '#6554C0',
-    description: 'New version of the mobile application with enhanced features, better performance, and offline support.',
-    status: 'IN_PROGRESS',
-    priority: 'CRITICAL',
-    progress: 42,
-    startDate: '2024-02-01',
-    endDate: '2024-06-30',
-    budget: 80000,
-    members: ['user-4', 'user-2', 'user-6', 'user-1'],
-    owner: 'user-1',
-    taskCount: { total: 38, completed: 16, inProgress: 12, todo: 10 },
-    tags: ['Mobile', 'React Native'],
-  },
-  {
-    id: 'proj-3',
-    name: 'API Migration',
-    key: 'API',
-    color: '#00875A',
-    description: 'Migrate legacy REST APIs to GraphQL with improved documentation and developer experience.',
-    status: 'IN_PROGRESS',
-    priority: 'MEDIUM',
-    progress: 78,
-    startDate: '2024-01-01',
-    endDate: '2024-03-31',
-    budget: 30000,
-    members: ['user-4', 'user-7', 'user-1'],
-    owner: 'user-1',
-    taskCount: { total: 18, completed: 14, inProgress: 2, todo: 2 },
-    tags: ['Backend', 'API'],
-  },
-  {
-    id: 'proj-4',
-    name: 'Marketing Q1',
-    key: 'MKT',
-    color: '#FF5630',
-    description: 'Q1 marketing campaign including social media, content marketing, and email campaigns.',
-    status: 'NOT_STARTED',
-    priority: 'LOW',
-    progress: 10,
-    startDate: '2024-03-01',
-    endDate: '2024-03-31',
-    budget: 15000,
-    members: ['user-5', 'user-1'],
-    owner: 'user-1',
-    taskCount: { total: 12, completed: 1, inProgress: 0, todo: 11 },
-    tags: ['Marketing', 'Content'],
-  },
-  {
-    id: 'proj-5',
-    name: 'Data Analytics Platform',
-    key: 'DAP',
-    color: '#FF991F',
-    description: 'Build internal analytics dashboard for tracking business KPIs and user behavior.',
-    status: 'COMPLETED',
-    priority: 'HIGH',
-    progress: 100,
-    startDate: '2023-10-01',
-    endDate: '2024-01-31',
-    budget: 55000,
-    members: ['user-4', 'user-2', 'user-7', 'user-1'],
-    owner: 'user-1',
-    taskCount: { total: 32, completed: 32, inProgress: 0, todo: 0 },
-    tags: ['Analytics', 'Data'],
-  },
-]
+const API_BASE_URL = getDynamicApiUrl()
+
+const getHeaders = (state) => {
+  const token = state.auth.token
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  }
+}
 
 const initialState = {
-  projects: INITIAL_PROJECTS,
-  teamMembers: TEAM_MEMBERS,
+  projects: [],
+  teamMembers: [],
   selectedProject: null,
   loading: false,
   error: null,
@@ -132,8 +52,265 @@ const projectSlice = createSlice({
     setFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload }
     },
+    setTeamMembers: (state, action) => {
+      state.teamMembers = action.payload
+    },
+    addTeamMember: (state, action) => {
+      state.teamMembers.push(action.payload)
+    },
+    setLoading: (state, action) => {
+      state.loading = action.payload
+    },
+    setError: (state, action) => {
+      state.error = action.payload
+    }
   },
 })
 
-export const { setProjects, addProject, updateProject, deleteProject, setSelectedProject, setFilters } = projectSlice.actions
+export const {
+  setProjects,
+  addProject,
+  updateProject,
+  deleteProject,
+  setSelectedProject,
+  setFilters,
+  setTeamMembers,
+  addTeamMember,
+  setLoading,
+  setError
+} = projectSlice.actions
+
+// Thunks
+const mapBackendProjectStatusToFrontend = (status) => {
+  if (status === 'ACTIVE') return 'IN_PROGRESS'
+  if (status === 'ON_HOLD') return 'NOT_STARTED'
+  return status || 'IN_PROGRESS'
+}
+
+const mapFrontendProjectStatusToBackend = (status) => {
+  if (status === 'IN_PROGRESS') return 'ACTIVE'
+  if (status === 'NOT_STARTED') return 'ON_HOLD'
+  return status || 'ACTIVE'
+}
+
+export const fetchProjects = () => async (dispatch, getState) => {
+  dispatch(setLoading(true))
+  try {
+    const headers = getHeaders(getState())
+    const response = await fetch(`${API_BASE_URL}/api/projects`, { headers })
+    if (!response.ok) throw new Error('Failed to fetch projects')
+    const data = await response.json()
+    const mapped = data.map(p => ({
+      id: p.id,
+      name: p.name,
+      key: p.key,
+      color: p.color || '#0052CC',
+      description: p.description,
+      status: mapBackendProjectStatusToFrontend(p.status),
+      priority: p.priority || 'MEDIUM',
+      progress: p.progress || 0,
+      startDate: p.createdAt ? p.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+      endDate: p.targetDate ? p.targetDate.split('T')[0] : '',
+      budget: p.budget || 0,
+      members: p.members ? p.members.map(m => m.id) : [],
+      owner: p.owner ? p.owner.id : null,
+      tags: p.tags || [],
+    }))
+    dispatch(setProjects(mapped))
+  } catch (error) {
+    dispatch(setError(error.message))
+  } finally {
+    dispatch(setLoading(false))
+  }
+}
+
+export const createProject = (projectData) => async (dispatch, getState) => {
+  dispatch(setLoading(true))
+  try {
+    const headers = getHeaders(getState())
+    const payload = {
+      name: projectData.name,
+      key: projectData.key.toUpperCase(),
+      description: projectData.description,
+      budget: Number(projectData.budget) || 0,
+      status: mapFrontendProjectStatusToBackend(projectData.status),
+      targetDate: projectData.endDate ? `${projectData.endDate}T00:00:00` : null,
+      memberIds: projectData.members || []
+    }
+    const response = await fetch(`${API_BASE_URL}/api/projects`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload)
+    })
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}))
+      throw new Error(errData.message || 'Failed to create project')
+    }
+    const data = await response.json()
+    const mapped = {
+      id: data.id,
+      name: data.name,
+      key: data.key,
+      color: projectData.color || '#0052CC',
+      description: data.description,
+      status: mapBackendProjectStatusToFrontend(data.status),
+      priority: projectData.priority || 'MEDIUM',
+      progress: 0,
+      startDate: data.createdAt ? data.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+      endDate: data.targetDate ? data.targetDate.split('T')[0] : '',
+      budget: data.budget || 0,
+      members: data.members ? data.members.map(m => m.id) : [],
+      owner: data.owner ? data.owner.id : null,
+      tags: projectData.tags || [],
+    }
+    dispatch(addProject(mapped))
+    return mapped
+  } catch (error) {
+    dispatch(setError(error.message))
+    throw error
+  } finally {
+    dispatch(setLoading(false))
+  }
+}
+
+export const updateProjectApi = (projectId, projectData) => async (dispatch, getState) => {
+  dispatch(setLoading(true))
+  try {
+    const headers = getHeaders(getState())
+    const payload = {
+      name: projectData.name,
+      key: projectData.key?.toUpperCase(),
+      description: projectData.description,
+      budget: Number(projectData.budget) || 0,
+      status: mapFrontendProjectStatusToBackend(projectData.status),
+      targetDate: projectData.endDate ? `${projectData.endDate}T00:00:00` : null,
+      memberIds: projectData.members || []
+    }
+    const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(payload)
+    })
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}))
+      throw new Error(errData.message || 'Failed to update project')
+    }
+    const data = await response.json()
+    const mapped = {
+      id: data.id,
+      name: data.name,
+      key: data.key,
+      color: projectData.color || '#0052CC',
+      description: data.description,
+      status: mapBackendProjectStatusToFrontend(data.status),
+      priority: projectData.priority || 'MEDIUM',
+      progress: projectData.progress || 0,
+      startDate: data.createdAt ? data.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+      endDate: data.targetDate ? data.targetDate.split('T')[0] : '',
+      budget: data.budget || 0,
+      members: data.members ? data.members.map(m => m.id) : [],
+      owner: data.owner ? data.owner.id : null,
+      tags: projectData.tags || [],
+    }
+    dispatch(updateProject(mapped))
+    return mapped
+  } catch (error) {
+    dispatch(setError(error.message))
+    throw error
+  } finally {
+    dispatch(setLoading(false))
+  }
+}
+
+export const deleteProjectApi = (projectId) => async (dispatch, getState) => {
+  dispatch(setLoading(true))
+  try {
+    const headers = getHeaders(getState())
+    const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
+      method: 'DELETE',
+      headers
+    })
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}))
+      throw new Error(errData.message || 'Failed to delete project')
+    }
+    dispatch(deleteProject(projectId))
+  } catch (error) {
+    dispatch(setError(error.message))
+    throw error
+  } finally {
+    dispatch(setLoading(false))
+  }
+}
+
+export const fetchTeamMembers = () => async (dispatch, getState) => {
+  dispatch(setLoading(true))
+  try {
+    const headers = getHeaders(getState())
+    const response = await fetch(`${API_BASE_URL}/api/users`, { headers })
+    if (!response.ok) throw new Error('Failed to fetch team members')
+    const data = await response.json()
+    const mapped = data.map(u => {
+      const initials = u.fullName?.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) || 'TM'
+      const roleName = u.role?.replace(/^ROLE_/, '') || 'EMPLOYEE'
+      return {
+        id: u.id,
+        name: u.fullName,
+        avatar: u.avatarUrl || initials,
+        avatarColor: '#0052CC',
+        role: roleName,
+        title: roleName === 'MANAGER' ? 'Project Manager' : roleName === 'ADMIN' ? 'Administrator' : 'Senior Software Engineer',
+        email: u.email,
+        active: u.active
+      }
+    })
+    dispatch(setTeamMembers(mapped))
+  } catch (error) {
+    dispatch(setError(error.message))
+  } finally {
+    dispatch(setLoading(false))
+  }
+}
+
+export const createTeamMember = (memberData) => async (dispatch, getState) => {
+  dispatch(setLoading(true))
+  try {
+    const headers = getHeaders(getState())
+    const response = await fetch(`${API_BASE_URL}/api/users`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        email: memberData.email,
+        password: memberData.password || 'Employee@123',
+        fullName: memberData.name,
+        role: memberData.role ? `ROLE_${memberData.role}` : 'ROLE_EMPLOYEE'
+      })
+    })
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}))
+      throw new Error(errData.message || 'Failed to create team member')
+    }
+    const data = await response.json()
+    const initials = data.fullName?.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) || 'TM'
+    const roleName = data.role?.replace(/^ROLE_/, '') || 'EMPLOYEE'
+    const mapped = {
+      id: data.id,
+      name: data.fullName,
+      avatar: data.avatarUrl || initials,
+      avatarColor: '#0052CC',
+      role: roleName,
+      title: roleName === 'MANAGER' ? 'Project Manager' : roleName === 'ADMIN' ? 'Administrator' : 'Senior Software Engineer',
+      email: data.email,
+      active: data.active
+    }
+    dispatch(addTeamMember(mapped))
+    return mapped
+  } catch (error) {
+    dispatch(setError(error.message))
+    throw error
+  } finally {
+    dispatch(setLoading(false))
+  }
+}
+
 export default projectSlice.reducer

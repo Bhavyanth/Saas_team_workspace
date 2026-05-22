@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { X } from 'lucide-react'
-import { addProject, updateProject } from '../../store/slices/projectSlice'
+import { createProject, updateProjectApi } from '../../store/slices/projectSlice'
 import { closeModal } from '../../store/slices/uiSlice'
+import UserAvatar from '../common/UserAvatar'
 
 const PRESET_COLORS = [
   '#0052CC', // Blue
@@ -80,32 +81,35 @@ export default function ProjectModal({ mode = 'create' }) {
 
     if (mode === 'create') {
       const newProject = {
-        id: `proj-${Date.now()}`,
         name: formData.name,
         key: formData.key.toUpperCase(),
         color: formData.color,
         description: formData.description,
         status: formData.status,
         priority: formData.priority,
-        progress: 0,
         startDate: formData.startDate,
         endDate: formData.endDate,
         budget: Number(formData.budget) || 0,
         members: [...formData.members, user?.id].filter(Boolean),
-        owner: user?.id || 'user-1',
-        taskCount: { total: 0, completed: 0, inProgress: 0, todo: 0 },
         tags: formattedTags,
       }
-      dispatch(addProject(newProject))
-      dispatch({ 
-        type: 'ui/addToast', 
-        payload: { type: 'success', title: 'Project Created', message: `Project "${formData.name}" has been created successfully.` }
-      })
+      dispatch(createProject(newProject))
+        .then(() => {
+          dispatch({ 
+            type: 'ui/addToast', 
+            payload: { type: 'success', title: 'Project Created', message: `Project "${formData.name}" has been created successfully.` }
+          })
+          handleClose()
+        })
+        .catch(err => {
+          dispatch({ 
+            type: 'ui/addToast', 
+            payload: { type: 'error', title: 'Creation Failed', message: err.message || 'Failed to create project.' }
+          })
+        })
     } else {
       const updatedData = {
-        id: formData.id,
         name: formData.name,
-        key: formData.key.toUpperCase(),
         color: formData.color,
         description: formData.description,
         status: formData.status,
@@ -116,14 +120,21 @@ export default function ProjectModal({ mode = 'create' }) {
         members: formData.members,
         tags: formattedTags,
       }
-      dispatch(updateProject(updatedData))
-      dispatch({ 
-        type: 'ui/addToast', 
-        payload: { type: 'success', title: 'Project Updated', message: `Project "${formData.name}" has been updated.` }
-      })
+      dispatch(updateProjectApi(formData.id, updatedData))
+        .then(() => {
+          dispatch({ 
+            type: 'ui/addToast', 
+            payload: { type: 'success', title: 'Project Updated', message: `Project "${formData.name}" has been updated.` }
+          })
+          handleClose()
+        })
+        .catch(err => {
+          dispatch({ 
+            type: 'ui/addToast', 
+            payload: { type: 'error', title: 'Update Failed', message: err.message || 'Failed to update project.' }
+          })
+        })
     }
-    
-    handleClose()
   }
 
   return (
@@ -283,7 +294,12 @@ export default function ProjectModal({ mode = 'create' }) {
                         checked={isChecked}
                         onChange={() => handleMemberToggle(member.id)}
                       />
-                      <div className="user-avatar-sm" style={{ backgroundColor: member.avatarColor, width: 20, height: 20, fontSize: 8 }}>{member.avatar}</div>
+                      <UserAvatar
+                        avatar={member.avatar}
+                        name={member.name}
+                        avatarColor={member.avatarColor}
+                        size="xs"
+                      />
                       <span style={{ fontSize: 12 }}>{member.name}</span>
                     </label>
                   )

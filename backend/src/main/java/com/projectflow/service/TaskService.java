@@ -33,6 +33,16 @@ public class TaskService {
     }
 
     public List<Task> getTasksForUser(User user) {
+        if (user.getRole() == com.projectflow.entity.Role.ROLE_MANAGER || user.getRole() == com.projectflow.entity.Role.ROLE_ADMIN) {
+            List<Project> projects = projectRepository.findAllByOwnerOrMember(user);
+            if (projects.isEmpty()) {
+                return java.util.Collections.emptyList();
+            }
+            List<Long> projectIds = projects.stream()
+                    .map(Project::getId)
+                    .collect(java.util.stream.Collectors.toList());
+            return taskRepository.findAllByProjectIdIn(projectIds);
+        }
         return taskRepository.findAllByAssignee(user);
     }
 

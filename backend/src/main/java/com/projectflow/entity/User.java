@@ -19,11 +19,11 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 500)
     private String email;
 
     @JsonIgnore
-    @Column(nullable = false)
+    @Column(nullable = false, length = 500)
     private String password;
 
     @Column(nullable = false)
@@ -33,6 +33,7 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Role role;
 
+    @Column(columnDefinition = "TEXT")
     private String avatarUrl;
 
     private boolean active = true;

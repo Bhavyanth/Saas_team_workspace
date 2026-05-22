@@ -343,6 +343,19 @@ img {
   color: var(--sidebar-text-active);
 }
 
+.sidebar-nav-item.logout {
+  color: #ff8b8b;
+  margin-top: 4px;
+  background: rgba(255, 76, 76, 0.08);
+  border: 1px solid rgba(255, 76, 76, 0.15);
+}
+
+.sidebar-nav-item.logout:hover {
+  background: rgba(255, 76, 76, 0.18);
+  border-color: rgba(255, 76, 76, 0.3);
+  color: #ffffff;
+}
+
 .sidebar-nav-item .nav-badge {
   margin-left: auto;
   background: var(--color-danger);
@@ -689,6 +702,22 @@ img {
   color: white;
   font-weight: 700;
   font-size: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.user-avatar-xs {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 9px;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .user-avatar-lg {
@@ -701,6 +730,8 @@ img {
   color: white;
   font-weight: 700;
   font-size: 16px;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .user-dropdown-menu {

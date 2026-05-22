@@ -32,14 +32,13 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/projectflow
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      DATABASE_URL: jdbc:postgresql://db.krcpxgfxvukickehjtnw.supabase.co:5432/postgres?sslmode=require
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: "P1,o2,i3,u4"
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
       JWT_SECRET: 407780T00Y587123984712034981723491823491823498172349817239487123
     depends_on:
-      - postgres
       - redis
 
   frontend:

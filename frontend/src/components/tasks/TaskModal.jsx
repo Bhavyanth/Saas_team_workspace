@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { X } from 'lucide-react'
-import { addTask, updateTask } from '../../store/slices/taskSlice'
+import { createTask, updateTaskApi } from '../../store/slices/taskSlice'
 import { closeModal } from '../../store/slices/uiSlice'
 
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
@@ -86,88 +86,25 @@ export default function TaskModal({ mode = 'create' }) {
       ? formData.labels.split(',').map(l => l.trim()).filter(Boolean)
       : []
 
+    const payload = {
+      title: formData.title,
+      description: formData.description,
+      status: formData.status,
+      priority: formData.priority,
+      storyPoints: Number(formData.storyPoints) || 0,
+      estimatedHours: Number(formData.estimatedHours) || 0,
+      dueDate: formData.dueDate,
+      assignedTo: formData.assignedTo || null
+    }
+
     if (mode === 'create') {
-      // Calculate key code
-      const projTasks = tasks.filter(t => t.projectId === project.id)
-      const taskNum = projTasks.length + 1
-      const taskKey = `${project.key}-${taskNum}`
-
-      const newTask = {
-        id: `task-${Date.now()}`,
-        projectId: project.id,
-        projectName: project.name,
-        projectKey: project.key,
-        projectColor: project.color,
-        key: taskKey,
-        title: formData.title,
-        description: formData.description,
-        status: formData.status,
-        priority: formData.priority,
-        assignedTo: formData.assignedTo,
-        assignedName: assignee ? assignee.name : 'Unassigned',
-        assignedAvatar: assignee ? assignee.avatar : 'UA',
-        assignedColor: assignee ? assignee.avatarColor : '#6B778C',
-        reporter: user?.id || 'user-1',
-        reporterName: user?.name || 'Alex Johnson',
-        startDate: formData.startDate,
-        dueDate: formData.dueDate,
-        estimatedHours: Number(formData.estimatedHours) || 0,
-        actualHours: 0,
-        storyPoints: Number(formData.storyPoints) || 0,
-        progress: formData.status === 'COMPLETED' ? 100 : 0,
-        labels: formattedLabels,
-        comments: 0,
-        attachments: 0,
-        createdAt: new Date().toISOString().split('T')[0],
-      }
-
-      dispatch(addTask(newTask))
-      
-      // Send real-time notification simulation if assigned to someone else
-      if (assignee && assignee.id !== user?.id) {
-        dispatch({
-          type: 'notifications/addNotification',
-          payload: {
-            id: `notif-${Date.now()}`,
-            type: 'TASK_ASSIGNED',
-            title: 'Task Assigned',
-            message: `${user?.name || 'Manager'} assigned you "${formData.title}"`,
-            isRead: false,
-            createdAt: new Date().toISOString(),
-            entityType: 'task',
-            entityId: newTask.id
-          }
-        })
-      }
-
+      dispatch(createTask(formData.projectId, payload))
       dispatch({
         type: 'ui/addToast',
         payload: { type: 'success', title: 'Task Created', message: `Task "${formData.title}" has been created successfully.` }
       })
     } else {
-      const updatedTask = {
-        id: modalData.id,
-        projectId: project.id,
-        projectName: project.name,
-        projectKey: project.key,
-        projectColor: project.color,
-        title: formData.title,
-        description: formData.description,
-        status: formData.status,
-        priority: formData.priority,
-        assignedTo: formData.assignedTo,
-        assignedName: assignee ? assignee.name : 'Unassigned',
-        assignedAvatar: assignee ? assignee.avatar : 'UA',
-        assignedColor: assignee ? assignee.avatarColor : '#6B778C',
-        startDate: formData.startDate,
-        dueDate: formData.dueDate,
-        estimatedHours: Number(formData.estimatedHours) || 0,
-        storyPoints: Number(formData.storyPoints) || 0,
-        progress: formData.status === 'COMPLETED' ? 100 : formData.status === 'TO_DO' ? 0 : modalData.progress || 50,
-        labels: formattedLabels,
-      }
-
-      dispatch(updateTask(updatedTask))
+      dispatch(updateTaskApi(modalData.id, payload))
       dispatch({
         type: 'ui/addToast',
         payload: { type: 'success', title: 'Task Updated', message: `Task "${formData.title}" has been updated.` }

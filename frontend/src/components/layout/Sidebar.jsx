@@ -3,16 +3,19 @@ import { useSelector, useDispatch } from 'react-redux'
 import {
   LayoutDashboard, FolderKanban, CheckSquare, Calendar,
   MessageSquare, Users, BarChart2, Settings, HelpCircle,
-  Layers, Plus, ChevronDown, ChevronRight, Bell
+  Layers, Plus, ChevronDown, ChevronRight, Bell, LogOut,
+  Mail
 } from 'lucide-react'
 import { logout } from '../../store/slices/authSlice'
 import { toggleNotificationPanel } from '../../store/slices/uiSlice'
+import UserAvatar from '../common/UserAvatar'
 
 const EMPLOYEE_NAV = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', id: 'dashboard' },
   { icon: CheckSquare, label: 'My Tasks', path: '/tasks', id: 'tasks' },
   { icon: Calendar, label: 'Calendar', path: '/calendar', id: 'calendar' },
   { icon: MessageSquare, label: 'Messages', path: '/messages', id: 'messages', badge: 4 },
+  { icon: Mail, label: 'Email Hub', path: '/email', id: 'email' },
 ]
 
 const MANAGER_EXTRA_NAV = [
@@ -37,6 +40,11 @@ export default function Sidebar() {
   const { projects } = useSelector(s => s.projects)
   const { unreadCount } = useSelector(s => s.notifications)
   const isManager = user?.role === 'MANAGER' || user?.role === 'ADMIN'
+
+  const handleLogout = () => {
+    dispatch(logout())
+    navigate('/login')
+  }
 
   const navItems = isManager
     ? [...EMPLOYEE_NAV, ...MANAGER_EXTRA_NAV]
@@ -151,16 +159,24 @@ export default function Sidebar() {
             <Settings size={16} />
             <span>Settings</span>
           </button>
+          <button
+            className="sidebar-nav-item logout"
+            id="nav-logout"
+            onClick={handleLogout}
+          >
+            <LogOut size={16} />
+            <span>Log Out</span>
+          </button>
         </div>
 
         {/* User profile */}
         <div className="sidebar-user">
-          <div
-            className="user-avatar"
-            style={{ backgroundColor: user?.avatarColor || '#4C9AFF' }}
-          >
-            {user?.avatar || user?.name?.slice(0, 2).toUpperCase() || 'U'}
-          </div>
+          <UserAvatar
+            avatar={user?.avatar}
+            name={user?.name}
+            avatarColor={user?.avatarColor || '#4C9AFF'}
+            size="sm"
+          />
           <div className="user-info">
             <div className="user-name">{user?.name || 'User'}</div>
             <div className="user-role">

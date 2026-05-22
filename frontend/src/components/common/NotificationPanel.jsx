@@ -4,7 +4,7 @@ import {
   X, CheckSquare, MessageSquare, AlertTriangle, 
   FolderSync, ShieldAlert, CheckCircle, Trash2, MailOpen
 } from 'lucide-react'
-import { markAsRead, markAllAsRead, deleteNotification } from '../../store/slices/notificationSlice'
+import { markNotificationAsReadApi, markAllNotificationsAsReadApi, deleteNotification } from '../../store/slices/notificationSlice'
 import { closeNotificationPanel } from '../../store/slices/uiSlice'
 
 export default function NotificationPanel() {
@@ -75,7 +75,7 @@ export default function NotificationPanel() {
           {unreadCount > 0 && (
             <button 
               className="icon-btn" 
-              onClick={() => dispatch(markAllAsRead())}
+              onClick={() => dispatch(markAllNotificationsAsReadApi())}
               title="Mark all as read"
             >
               <MailOpen size={16} />
@@ -105,7 +105,7 @@ export default function NotificationPanel() {
               className={`notification-item ${!notif.isRead ? 'unread' : ''}`}
               onClick={() => {
                 if (!notif.isRead) {
-                  dispatch(markAsRead(notif.id))
+                  dispatch(markNotificationAsReadApi(notif.id))
                 }
               }}
             >
@@ -124,7 +124,7 @@ export default function NotificationPanel() {
                       className="btn-link"
                       onClick={(e) => {
                         e.stopPropagation()
-                        dispatch(markAsRead(notif.id))
+                        dispatch(markNotificationAsReadApi(notif.id))
                       }}
                     >
                       Mark read

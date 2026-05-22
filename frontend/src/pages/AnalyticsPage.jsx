@@ -47,7 +47,7 @@ export default function AnalyticsPage() {
 
   // 4. Developer Productivity/Story Points Completed
   const memberProductivity = teamMembers.map((member, index) => {
-    const memberTasks = tasks.filter(t => t.assignedTo === member.id && t.status === 'COMPLETED')
+    const memberTasks = tasks.filter(t => String(t.assignedTo) === String(member.id) && t.status === 'COMPLETED')
     const totalPoints = memberTasks.reduce((sum, t) => sum + (t.storyPoints || 0), 0)
     return {
       name: member.name.split(' ')[0],

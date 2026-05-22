@@ -4,10 +4,21 @@ server:
 spring:
   application:
     name: projectflow-backend
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SPRING_MAIL_USERNAME:dreammasterorigin@gmail.com}
+    password: ${SPRING_MAIL_PASSWORD:jdianbzijuaxvuri}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:projectflow;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
-    username: ${SPRING_DATASOURCE_USERNAME:sa}
-    password: ${SPRING_DATASOURCE_PASSWORD:}
+    url: ${SPRING_DATASOURCE_URL:${DATABASE_URL:jdbc:postgresql://db.ahypgqvobutdirukxwfh.supabase.co:5432/postgres?sslmode=require}}
+    username: ${SPRING_DATASOURCE_USERNAME:${DATABASE_USERNAME:postgres}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DATABASE_PASSWORD:P1,o2,i3,u4}}
   jpa:
     hibernate:
       ddl-auto: update
@@ -26,4 +37,6 @@ projectflow:
   jwt:
     secret: ${JWT_SECRET:407780T00Y587123984712034981723491823491823498172349817239487123}
     expiration-ms: 86400000 # 24 hours
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:5173}
 

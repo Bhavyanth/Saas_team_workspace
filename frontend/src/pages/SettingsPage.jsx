@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { useSearchParams } from 'react-router-dom'
 import { User, Bell, Settings, HelpCircle, Save } from 'lucide-react'
 import { updateUser } from '../store/slices/authSlice'
+import UserAvatar from '../components/common/UserAvatar'
 
 export default function SettingsPage() {
   const dispatch = useDispatch()
@@ -160,18 +161,12 @@ export default function SettingsPage() {
             </div>
 
             <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 8 }}>
-              <div 
-                className="user-avatar" 
-                style={{ 
-                  backgroundColor: profileData.avatarColor || '#0052CC',
-                  width: 56,
-                  height: 56,
-                  fontSize: 20,
-                  fontWeight: 700
-                }}
-              >
-                {user?.avatar}
-              </div>
+                <UserAvatar
+                avatar={user?.avatar}
+                name={user?.name}
+                avatarColor={profileData.avatarColor || '#0052CC'}
+                size="lg"
+              />
               <div className="flex flex-col gap-1">
                 <span className="font-semibold" style={{ fontSize: 13, color: '#172B4D' }}>Choose Profile Theme</span>
                 <div className="flex gap-2">

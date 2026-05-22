@@ -3,7 +3,7 @@ import {
   Plus, Calendar, DollarSign, CheckCircle2, AlertTriangle, 
   Trash2, Edit2, Users, Briefcase, Eye
 } from 'lucide-react'
-import { deleteProject, setFilters } from '../store/slices/projectSlice'
+import { deleteProjectApi, setFilters } from '../store/slices/projectSlice'
 import { openModal } from '../store/slices/uiSlice'
 
 const PRIORITY_BADGES = {
@@ -30,11 +30,19 @@ export default function ProjectsPage() {
 
   const handleDeleteProject = (projectId, name) => {
     if (window.confirm(`Are you sure you want to delete project "${name}"? This will delete all associated statistics.`)) {
-      dispatch(deleteProject(projectId))
-      dispatch({
-        type: 'ui/addToast',
-        payload: { type: 'warning', title: 'Project Deleted', message: `Project "${name}" has been deleted.` }
-      })
+      dispatch(deleteProjectApi(projectId))
+        .then(() => {
+          dispatch({
+            type: 'ui/addToast',
+            payload: { type: 'warning', title: 'Project Deleted', message: `Project "${name}" has been deleted.` }
+          })
+        })
+        .catch(err => {
+          dispatch({
+            type: 'ui/addToast',
+            payload: { type: 'error', title: 'Delete Failed', message: err.message || 'Could not delete project.' }
+          })
+        })
     }
   }
 

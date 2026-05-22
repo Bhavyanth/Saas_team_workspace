@@ -1,26 +1,42 @@
 import { createSlice } from '@reduxjs/toolkit'
 
-const INITIAL_NOTIFICATIONS = [
-  { id: 'notif-1', type: 'TASK_ASSIGNED', title: 'Task Assigned', message: 'Alex Johnson assigned you "Implement responsive navigation"', isRead: false, createdAt: new Date(Date.now() - 30 * 60000).toISOString(), entityType: 'task', entityId: 'task-2' },
-  { id: 'notif-2', type: 'DEADLINE_APPROACHING', title: 'Deadline Approaching', message: 'Task "App store submission preparation" is due tomorrow', isRead: false, createdAt: new Date(Date.now() - 2 * 3600000).toISOString(), entityType: 'task', entityId: 'task-8' },
-  { id: 'notif-3', type: 'COMMENT_ADDED', title: 'New Comment', message: 'James Wilson commented on "Push notification system"', isRead: false, createdAt: new Date(Date.now() - 4 * 3600000).toISOString(), entityType: 'task', entityId: 'task-6' },
-  { id: 'notif-4', type: 'PROJECT_UPDATED', title: 'Project Updated', message: 'Mobile App v2 status changed to In Progress', isRead: true, createdAt: new Date(Date.now() - 24 * 3600000).toISOString(), entityType: 'project', entityId: 'proj-2' },
-  { id: 'notif-5', type: 'MENTION', title: 'You were mentioned', message: 'Priya Patel mentioned you in "Performance optimization" task', isRead: true, createdAt: new Date(Date.now() - 48 * 3600000).toISOString(), entityType: 'task', entityId: 'task-4' },
-]
+const getDynamicApiUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+  return `http://${hostname}:8080`
+}
+
+const API_BASE_URL = getDynamicApiUrl()
+
+const getHeaders = (state) => {
+  const token = state.auth.token
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  }
+}
 
 const initialState = {
-  notifications: INITIAL_NOTIFICATIONS,
-  unreadCount: 3,
+  notifications: [],
+  unreadCount: 0,
   loading: false,
+  error: null,
 }
 
 const notificationSlice = createSlice({
   name: 'notifications',
   initialState,
   reducers: {
+    setNotifications: (state, action) => {
+      state.notifications = action.payload
+      state.unreadCount = action.payload.filter(n => !n.isRead).length
+    },
     addNotification: (state, action) => {
-      state.notifications.unshift(action.payload)
-      if (!action.payload.isRead) state.unreadCount += 1
+      // Avoid duplicate notifications in array
+      if (!state.notifications.some(n => n.id === action.payload.id)) {
+        state.notifications.unshift(action.payload)
+        if (!action.payload.isRead) state.unreadCount += 1
+      }
     },
     markAsRead: (state, action) => {
       const notif = state.notifications.find(n => n.id === action.payload)
@@ -42,8 +58,95 @@ const notificationSlice = createSlice({
       if (notif && !notif.isRead) state.unreadCount = Math.max(0, state.unreadCount - 1)
       state.notifications = state.notifications.filter(n => n.id !== action.payload)
     },
+    setLoading: (state, action) => {
+      state.loading = action.payload
+    },
+    setError: (state, action) => {
+      state.error = action.payload
+    }
   },
 })
 
-export const { addNotification, markAsRead, markAllAsRead, deleteNotification } = notificationSlice.actions
+export const {
+  setNotifications,
+  addNotification,
+  markAsRead,
+  markAllAsRead,
+  deleteNotification,
+  setLoading,
+  setError
+} = notificationSlice.actions
+
+// Thunks
+export const fetchNotifications = () => async (dispatch, getState) => {
+  dispatch(setLoading(true))
+  try {
+    const headers = getHeaders(getState())
+    const response = await fetch(`${API_BASE_URL}/api/notifications`, { headers })
+    if (!response.ok) throw new Error('Failed to fetch notifications')
+    const data = await response.json()
+    
+    // Map backend notifications to frontend structure
+    const mapped = data.map(n => {
+      let title = 'Notification'
+      let entityType = 'other'
+      if (n.type === 'TASK_ASSIGNED') {
+        title = 'Task Assigned'
+        entityType = 'task'
+      } else if (n.type === 'TASK_UPDATED') {
+        title = 'Task Updated'
+        entityType = 'task'
+      } else if (n.type === 'COMMENT_ADDED') {
+        title = 'New Comment'
+        entityType = 'task'
+      }
+      
+      return {
+        id: n.id,
+        type: n.type,
+        title,
+        message: n.content,
+        isRead: n.read,
+        createdAt: n.createdAt,
+        entityType,
+        entityId: null
+      }
+    })
+    
+    dispatch(setNotifications(mapped))
+  } catch (error) {
+    dispatch(setError(error.message))
+  } finally {
+    dispatch(setLoading(false))
+  }
+}
+
+export const markNotificationAsReadApi = (id) => async (dispatch, getState) => {
+  try {
+    const headers = getHeaders(getState())
+    const response = await fetch(`${API_BASE_URL}/api/notifications/${id}/read`, {
+      method: 'PATCH',
+      headers
+    })
+    if (!response.ok) throw new Error('Failed to mark notification as read')
+    dispatch(markAsRead(id))
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export const markAllNotificationsAsReadApi = () => async (dispatch, getState) => {
+  try {
+    const headers = getHeaders(getState())
+    const response = await fetch(`${API_BASE_URL}/api/notifications/read-all`, {
+      method: 'POST',
+      headers
+    })
+    if (!response.ok) throw new Error('Failed to mark all as read')
+    dispatch(markAllAsRead())
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 export default notificationSlice.reducer

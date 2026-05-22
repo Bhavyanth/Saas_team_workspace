@@ -9,6 +9,7 @@ import {
   Clock, Award, Calendar, CheckCircle2, ChevronRight, Play
 } from 'lucide-react'
 import { openModal } from '../store/slices/uiSlice'
+import UserAvatar from '../components/common/UserAvatar'
 
 // Chart Colors
 const STATUS_COLORS = {
@@ -78,7 +79,7 @@ function ManagerDashboard({ user }) {
 
   // 3. Workload Data by Team Member (Bar Chart)
   const workloadData = teamMembers.map(member => {
-    const memberTasks = tasks.filter(t => t.assignedTo === member.id)
+    const memberTasks = tasks.filter(t => String(t.assignedTo) === String(member.id))
     return {
       name: member.name.split(' ')[0], // First name
       tasks: memberTasks.length,
@@ -298,7 +299,12 @@ function ManagerDashboard({ user }) {
                   <span className="font-semibold truncate" style={{ fontSize: 13, color: '#172B4D' }}>{t.title}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="user-avatar-sm" style={{ backgroundColor: t.assignedColor }}>{t.assignedAvatar}</div>
+                  <UserAvatar
+                    avatar={t.assignedAvatar}
+                    name={t.assignedName}
+                    avatarColor={t.assignedColor}
+                    size="xs"
+                  />
                   <ChevronRight size={16} color="#97A0AF" />
                 </div>
               </div>
@@ -325,7 +331,7 @@ function EmployeeDashboard({ user }) {
   const tasks = useSelector(state => state.tasks.tasks)
   
   // 1. Calculations
-  const myTasks = tasks.filter(t => t.assignedTo === user.id)
+  const myTasks = tasks.filter(t => String(t.assignedTo) === String(user.id))
   const todoTasksCount = myTasks.filter(t => t.status === 'TO_DO' || t.status === 'IN_PROGRESS').length
   const completedTasksCount = myTasks.filter(t => t.status === 'COMPLETED').length
   const reviewTasksCount = myTasks.filter(t => t.status === 'IN_REVIEW' || t.status === 'TESTING').length

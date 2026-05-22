@@ -4,6 +4,7 @@ import com.projectflow.entity.Notification;
 import com.projectflow.entity.User;
 import com.projectflow.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,12 @@ public class NotificationService {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
+    @Autowired
+    private EmailService emailService;
+
+    @Value("${projectflow.frontend.url}")
+    private String frontendUrl;
+
     @Transactional
     public Notification createAndSendNotification(User recipient, String content, String type) {
         Notification notification = Notification.builder()
@@ -30,6 +37,7 @@ public class NotificationService {
 
         Notification saved = notificationRepository.save(notification);
 
+        // Dispatch live WebSocket notification
         try {
             messagingTemplate.convertAndSendToUser(
                     recipient.getEmail(),
@@ -38,6 +46,35 @@ public class NotificationService {
             );
         } catch (Exception e) {
             // Fail silently if WebSocket is not active
+        }
+
+        // Dispatch real-time SMTP Email notification asynchronously
+        try {
+            String subject = "🔔 ProjectFlow Update";
+            String buttonText = "View Workspace";
+            
+            if ("TASK_ASSIGNED".equals(type)) {
+                subject = "📋 Task Assigned to You";
+                buttonText = "View Assigned Task";
+            } else if ("COMMENT_ADDED".equals(type)) {
+                subject = "💬 New Comment Added";
+                buttonText = "View Comment";
+            } else if ("TASK_UPDATED".equals(type)) {
+                subject = "🔄 Task Status Updated";
+                buttonText = "Check Progress";
+            }
+
+            String htmlBody = emailService.buildNotificationHtml(
+                    recipient.getFullName(),
+                    subject,
+                    content,
+                    buttonText,
+                    frontendUrl
+            );
+
+            emailService.sendEmail(recipient.getEmail(), subject, htmlBody, type);
+        } catch (Exception e) {
+            // Fail silently so SMTP issues do not abort main workflow transactions
         }
 
         return saved;

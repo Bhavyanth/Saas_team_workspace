@@ -13,6 +13,7 @@ import {
   closeUserMenu,
   openModal
 } from '../../store/slices/uiSlice'
+import UserAvatar from '../common/UserAvatar'
 
 export default function Header() {
   const dispatch = useDispatch()
@@ -150,23 +151,23 @@ export default function Header() {
             aria-expanded={userMenuOpen}
             title="User Settings"
           >
-            <div 
-              className="user-avatar-sm"
-              style={{ backgroundColor: user?.avatarColor || '#0052CC' }}
-            >
-              {user?.avatar || user?.name?.slice(0, 2).toUpperCase() || 'US'}
-            </div>
+            <UserAvatar
+              avatar={user?.avatar}
+              name={user?.name}
+              avatarColor={user?.avatarColor || '#0052CC'}
+              size="sm"
+            />
           </button>
 
           {userMenuOpen && (
             <div className="user-dropdown-menu">
               <div className="dropdown-user-header">
-                <div 
-                  className="user-avatar-lg"
-                  style={{ backgroundColor: user?.avatarColor || '#0052CC' }}
-                >
-                  {user?.avatar || user?.name?.slice(0, 2).toUpperCase() || 'US'}
-                </div>
+                <UserAvatar
+                  avatar={user?.avatar}
+                  name={user?.name}
+                  avatarColor={user?.avatarColor || '#0052CC'}
+                  size="lg"
+                />
                 <div className="dropdown-user-info">
                   <div className="dropdown-user-name">{user?.name}</div>
                   <div className="dropdown-user-email">{user?.email}</div>

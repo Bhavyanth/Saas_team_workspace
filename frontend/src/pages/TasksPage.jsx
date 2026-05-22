@@ -6,9 +6,10 @@ import {
   Calendar, CheckCircle2, AlertCircle, Edit2, Trash2, ArrowUpRight
 } from 'lucide-react'
 import { 
-  moveTask, deleteTask, setFilters, setViewMode 
+  updateTaskStatusApi, deleteTaskApi, setFilters, setViewMode 
 } from '../store/slices/taskSlice'
 import { openModal } from '../store/slices/uiSlice'
+import UserAvatar from '../components/common/UserAvatar'
 
 const COLUMNS = [
   { id: 'TO_DO', title: 'To Do', color: '#6B778C' },
@@ -58,10 +59,7 @@ export default function TasksPage() {
       destination.index === source.index
     ) return
 
-    dispatch(moveTask({ 
-      taskId: draggableId, 
-      newStatus: destination.droppableId 
-    }))
+    dispatch(updateTaskStatusApi(draggableId, destination.droppableId))
 
     dispatch({
       type: 'ui/addToast',
@@ -92,9 +90,9 @@ export default function TasksPage() {
 
   // Filter Tasks
   const filteredTasks = tasks.filter(task => {
-    const matchProject = filters.project === 'all' || task.projectId === filters.project
+    const matchProject = filters.project === 'all' || String(task.projectId) === String(filters.project)
     const matchPriority = filters.priority === 'all' || task.priority === filters.priority
-    const matchAssignee = filters.assignee === 'all' || task.assignedTo === filters.assignee
+    const matchAssignee = filters.assignee === 'all' || String(task.assignedTo) === String(filters.assignee)
     const matchStatus = filters.status === 'all' || task.status === filters.status
     const matchSearch = !filters.search || 
       task.title.toLowerCase().includes(filters.search.toLowerCase()) || 
@@ -110,7 +108,7 @@ export default function TasksPage() {
 
   const handleDeleteTask = (taskId, title) => {
     if (window.confirm(`Are you sure you want to delete task "${title}"?`)) {
-      dispatch(deleteTask(taskId))
+      dispatch(deleteTaskApi(taskId))
       dispatch({
         type: 'ui/addToast',
         payload: { type: 'warning', title: 'Task Deleted', message: `Task "${title}" has been deleted.` }
@@ -361,19 +359,12 @@ export default function TasksPage() {
                                     </div>
 
                                     {/* Assignee Avatar */}
-                                    <div 
-                                      className="user-avatar-sm" 
-                                      style={{ 
-                                        backgroundColor: task.assignedColor || '#6B778C', 
-                                        width: 22, 
-                                        height: 22, 
-                                        fontSize: 9,
-                                        fontWeight: 700 
-                                      }}
-                                      title={task.assignedName}
-                                    >
-                                      {task.assignedAvatar}
-                                    </div>
+                                    <UserAvatar
+                                      avatar={task.assignedAvatar}
+                                      name={task.assignedName}
+                                      avatarColor={task.assignedColor || '#6B778C'}
+                                      size="xs"
+                                    />
                                   </div>
                                 </div>
                               )}
@@ -434,7 +425,12 @@ export default function TasksPage() {
                       </td>
                       <td style={{ padding: '12px 16px' }}>
                         <div className="flex items-center gap-2">
-                          <div className="user-avatar-sm" style={{ backgroundColor: task.assignedColor, width: 22, height: 22, fontSize: 9 }}>{task.assignedAvatar}</div>
+                          <UserAvatar
+                            avatar={task.assignedAvatar}
+                            name={task.assignedName}
+                            avatarColor={task.assignedColor}
+                            size="xs"
+                          />
                           <span style={{ fontSize: 12 }}>{task.assignedName}</span>
                         </div>
                       </td>

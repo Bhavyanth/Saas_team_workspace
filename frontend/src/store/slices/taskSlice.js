@@ -1,141 +1,37 @@
 import { createSlice } from '@reduxjs/toolkit'
 
-const today = new Date()
-const addDays = (d, n) => {
-  const dt = new Date(d)
-  dt.setDate(dt.getDate() + n)
-  return dt.toISOString().split('T')[0]
+const getDynamicApiUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+  return `http://${hostname}:8080`
 }
 
-export const INITIAL_TASKS = [
-  // Website Redesign tasks
-  {
-    id: 'task-1', projectId: 'proj-1', projectName: 'Website Redesign', projectKey: 'WR', projectColor: '#0052CC',
-    key: 'WR-1', title: 'Design new homepage mockups', description: 'Create high-fidelity mockups for the new homepage design including hero, features, and CTA sections.',
-    status: 'COMPLETED', priority: 'HIGH', assignedTo: 'user-2', assignedName: 'Sarah Chen', assignedAvatar: 'SC', assignedColor: '#0052CC',
-    reporter: 'user-1', reporterName: 'Alex Johnson',
-    startDate: addDays(today, -20), dueDate: addDays(today, -5),
-    estimatedHours: 16, actualHours: 14, storyPoints: 8, progress: 100,
-    labels: ['Design', 'UI'], comments: 3, attachments: 2,
-    createdAt: addDays(today, -25),
-  },
-  {
-    id: 'task-2', projectId: 'proj-1', projectName: 'Website Redesign', projectKey: 'WR', projectColor: '#0052CC',
-    key: 'WR-2', title: 'Implement responsive navigation', description: 'Build the new responsive navigation component with mobile menu, search integration, and accessibility features.',
-    status: 'IN_PROGRESS', priority: 'HIGH', assignedTo: 'user-2', assignedName: 'Sarah Chen', assignedAvatar: 'SC', assignedColor: '#0052CC',
-    reporter: 'user-1', reporterName: 'Alex Johnson',
-    startDate: addDays(today, -10), dueDate: addDays(today, 5),
-    estimatedHours: 12, actualHours: 8, storyPoints: 5, progress: 70,
-    labels: ['Frontend', 'React'], comments: 5, attachments: 1,
-    createdAt: addDays(today, -15),
-  },
-  {
-    id: 'task-3', projectId: 'proj-1', projectName: 'Website Redesign', projectKey: 'WR', projectColor: '#0052CC',
-    key: 'WR-3', title: 'SEO optimization and meta tags', description: 'Implement SEO best practices including meta tags, structured data, and sitemap generation.',
-    status: 'TO_DO', priority: 'MEDIUM', assignedTo: 'user-2', assignedName: 'Sarah Chen', assignedAvatar: 'SC', assignedColor: '#0052CC',
-    reporter: 'user-1', reporterName: 'Alex Johnson',
-    startDate: addDays(today, 2), dueDate: addDays(today, 15),
-    estimatedHours: 8, actualHours: 0, storyPoints: 3, progress: 0,
-    labels: ['SEO'], comments: 1, attachments: 0,
-    createdAt: addDays(today, -5),
-  },
-  {
-    id: 'task-4', projectId: 'proj-1', projectName: 'Website Redesign', projectKey: 'WR', projectColor: '#0052CC',
-    key: 'WR-4', title: 'Performance optimization (Core Web Vitals)', description: 'Optimize page load times, LCP, FID, and CLS scores to achieve 90+ Google PageSpeed score.',
-    status: 'IN_REVIEW', priority: 'HIGH', assignedTo: 'user-5', assignedName: 'Priya Patel', assignedAvatar: 'PP', assignedColor: '#6554C0',
-    reporter: 'user-1', reporterName: 'Alex Johnson',
-    startDate: addDays(today, -8), dueDate: addDays(today, 3),
-    estimatedHours: 20, actualHours: 18, storyPoints: 8, progress: 90,
-    labels: ['Performance', 'Frontend'], comments: 7, attachments: 3,
-    createdAt: addDays(today, -12),
-  },
-  // Mobile App v2 tasks
-  {
-    id: 'task-5', projectId: 'proj-2', projectName: 'Mobile App v2', projectKey: 'MA', projectColor: '#6554C0',
-    key: 'MA-1', title: 'Authentication flow redesign', description: 'Redesign the login, registration, and password reset flows with biometric authentication support.',
-    status: 'COMPLETED', priority: 'HIGHEST', assignedTo: 'user-4', assignedName: 'James Wilson', assignedAvatar: 'JW', assignedColor: '#00875A',
-    reporter: 'user-1', reporterName: 'Alex Johnson',
-    startDate: addDays(today, -30), dueDate: addDays(today, -15),
-    estimatedHours: 24, actualHours: 26, storyPoints: 13, progress: 100,
-    labels: ['Auth', 'Security'], comments: 8, attachments: 4,
-    createdAt: addDays(today, -35),
-  },
-  {
-    id: 'task-6', projectId: 'proj-2', projectName: 'Mobile App v2', projectKey: 'MA', projectColor: '#6554C0',
-    key: 'MA-2', title: 'Push notification system', description: 'Implement push notifications for task assignments, deadlines, and team mentions using Firebase Cloud Messaging.',
-    status: 'IN_PROGRESS', priority: 'HIGH', assignedTo: 'user-4', assignedName: 'James Wilson', assignedAvatar: 'JW', assignedColor: '#00875A',
-    reporter: 'user-1', reporterName: 'Alex Johnson',
-    startDate: addDays(today, -5), dueDate: addDays(today, 10),
-    estimatedHours: 16, actualHours: 10, storyPoints: 8, progress: 60,
-    labels: ['Backend', 'Notifications'], comments: 4, attachments: 1,
-    createdAt: addDays(today, -8),
-  },
-  {
-    id: 'task-7', projectId: 'proj-2', projectName: 'Mobile App v2', projectKey: 'MA', projectColor: '#6554C0',
-    key: 'MA-3', title: 'Offline mode implementation', description: 'Add offline data sync capabilities with conflict resolution for tasks and comments.',
-    status: 'TO_DO', priority: 'MEDIUM', assignedTo: 'user-2', assignedName: 'Sarah Chen', assignedAvatar: 'SC', assignedColor: '#0052CC',
-    reporter: 'user-1', reporterName: 'Alex Johnson',
-    startDate: addDays(today, 5), dueDate: addDays(today, 25),
-    estimatedHours: 32, actualHours: 0, storyPoints: 13, progress: 0,
-    labels: ['Offline', 'Sync'], comments: 2, attachments: 0,
-    createdAt: addDays(today, -3),
-  },
-  {
-    id: 'task-8', projectId: 'proj-2', projectName: 'Mobile App v2', projectKey: 'MA', projectColor: '#6554C0',
-    key: 'MA-4', title: 'App store submission preparation', description: 'Prepare screenshots, metadata, privacy policy, and app store listing for iOS App Store and Google Play.',
-    status: 'BLOCKED', priority: 'HIGHEST', assignedTo: 'user-6', assignedName: 'Tom Bradley', assignedAvatar: 'TB', assignedColor: '#FF5630',
-    reporter: 'user-1', reporterName: 'Alex Johnson',
-    startDate: addDays(today, -2), dueDate: addDays(today, -1),
-    estimatedHours: 10, actualHours: 3, storyPoints: 5, progress: 30,
-    labels: ['Release', 'Marketing'], comments: 11, attachments: 6,
-    createdAt: addDays(today, -7),
-  },
-  // API Migration tasks
-  {
-    id: 'task-9', projectId: 'proj-3', projectName: 'API Migration', projectKey: 'API', projectColor: '#00875A',
-    key: 'API-1', title: 'GraphQL schema design', description: 'Design the GraphQL schema for all existing REST endpoints with proper types, queries, and mutations.',
-    status: 'COMPLETED', priority: 'HIGH', assignedTo: 'user-4', assignedName: 'James Wilson', assignedAvatar: 'JW', assignedColor: '#00875A',
-    reporter: 'user-1', reporterName: 'Alex Johnson',
-    startDate: addDays(today, -40), dueDate: addDays(today, -25),
-    estimatedHours: 16, actualHours: 18, storyPoints: 8, progress: 100,
-    labels: ['GraphQL', 'Architecture'], comments: 6, attachments: 2,
-    createdAt: addDays(today, -45),
-  },
-  {
-    id: 'task-10', projectId: 'proj-3', projectName: 'API Migration', projectKey: 'API', projectColor: '#00875A',
-    key: 'API-2', title: 'CI/CD pipeline setup', description: 'Set up automated deployment pipeline with GitHub Actions for staging and production environments.',
-    status: 'IN_PROGRESS', priority: 'MEDIUM', assignedTo: 'user-7', assignedName: 'Emma Davis', assignedAvatar: 'ED', assignedColor: '#FF991F',
-    reporter: 'user-1', reporterName: 'Alex Johnson',
-    startDate: addDays(today, -7), dueDate: addDays(today, 2),
-    estimatedHours: 20, actualHours: 15, storyPoints: 8, progress: 75,
-    labels: ['DevOps', 'CI/CD'], comments: 3, attachments: 2,
-    createdAt: addDays(today, -10),
-  },
-  // Additional tasks for employee view
-  {
-    id: 'task-11', projectId: 'proj-1', projectName: 'Website Redesign', projectKey: 'WR', projectColor: '#0052CC',
-    key: 'WR-5', title: 'Contact form with validation', description: 'Build contact form with real-time validation, spam protection, and email notification integration.',
-    status: 'TESTING', priority: 'MEDIUM', assignedTo: 'user-2', assignedName: 'Sarah Chen', assignedAvatar: 'SC', assignedColor: '#0052CC',
-    reporter: 'user-1', reporterName: 'Alex Johnson',
-    startDate: addDays(today, -3), dueDate: addDays(today, 1),
-    estimatedHours: 10, actualHours: 9, storyPoints: 5, progress: 85,
-    labels: ['Frontend', 'Forms'], comments: 2, attachments: 0,
-    createdAt: addDays(today, -6),
-  },
-  {
-    id: 'task-12', projectId: 'proj-2', projectName: 'Mobile App v2', projectKey: 'MA', projectColor: '#6554C0',
-    key: 'MA-5', title: 'Dark mode implementation', description: 'Add system-aware and manual dark mode toggle with persistent user preference storage.',
-    status: 'TO_DO', priority: 'LOW', assignedTo: 'user-2', assignedName: 'Sarah Chen', assignedAvatar: 'SC', assignedColor: '#0052CC',
-    reporter: 'user-1', reporterName: 'Alex Johnson',
-    startDate: addDays(today, 10), dueDate: addDays(today, 20),
-    estimatedHours: 12, actualHours: 0, storyPoints: 5, progress: 0,
-    labels: ['UI', 'Theme'], comments: 0, attachments: 1,
-    createdAt: addDays(today, -1),
-  },
-]
+const API_BASE_URL = getDynamicApiUrl()
+
+const mapBackendStatusToFrontend = (status) => {
+  if (status === 'TODO') return 'TO_DO';
+  if (status === 'DONE') return 'COMPLETED';
+  return status || 'TO_DO';
+}
+
+const mapFrontendStatusToBackend = (status) => {
+  if (status === 'TO_DO') return 'TODO';
+  if (status === 'COMPLETED') return 'DONE';
+  if (status === 'TESTING') return 'IN_REVIEW';
+  if (status === 'BLOCKED') return 'IN_PROGRESS';
+  return status || 'TODO';
+}
+
+const getHeaders = (state) => {
+  const token = state.auth.token
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  }
+}
 
 const initialState = {
-  tasks: INITIAL_TASKS,
+  tasks: [],
   selectedTask: null,
   loading: false,
   error: null,
@@ -153,6 +49,9 @@ const taskSlice = createSlice({
   name: 'tasks',
   initialState,
   reducers: {
+    setTasks: (state, action) => {
+      state.tasks = action.payload
+    },
     addTask: (state, action) => {
       state.tasks.unshift(action.payload)
     },
@@ -180,8 +79,252 @@ const taskSlice = createSlice({
     setViewMode: (state, action) => {
       state.viewMode = action.payload
     },
+    setLoading: (state, action) => {
+      state.loading = action.payload
+    },
+    setError: (state, action) => {
+      state.error = action.payload
+    }
   },
 })
 
-export const { addTask, updateTask, deleteTask, moveTask, setSelectedTask, setFilters, setViewMode } = taskSlice.actions
+export const {
+  setTasks,
+  addTask,
+  updateTask,
+  deleteTask,
+  moveTask,
+  setSelectedTask,
+  setFilters,
+  setViewMode,
+  setLoading,
+  setError
+} = taskSlice.actions
+
+// Thunks
+export const fetchTasks = () => async (dispatch, getState) => {
+  dispatch(setLoading(true))
+  try {
+    const headers = getHeaders(getState())
+    const response = await fetch(`${API_BASE_URL}/api/tasks`, { headers })
+    if (!response.ok) throw new Error('Failed to fetch tasks')
+    const data = await response.json()
+    
+    // Map backend tasks to frontend structure
+    const mapped = data.map(t => {
+      const assigneeInitials = t.assignee?.fullName?.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) || ''
+      const frontendStatus = mapBackendStatusToFrontend(t.status)
+      return {
+        id: t.id,
+        projectId: t.project?.id,
+        projectName: t.project?.name,
+        projectKey: t.project?.key,
+        projectColor: t.project?.color || '#0052CC',
+        key: `${t.project?.key || 'TASK'}-${t.id}`,
+        title: t.title,
+        description: t.description,
+        status: frontendStatus,
+        priority: t.priority || 'MEDIUM',
+        assignedTo: t.assignee?.id || null,
+        assignedName: t.assignee?.fullName || null,
+        assignedAvatar: t.assignee?.avatarUrl || assigneeInitials,
+        assignedColor: '#0052CC',
+        reporter: t.creator?.id || null,
+        reporterName: t.creator?.fullName || null,
+        startDate: t.createdAt ? t.createdAt.split('T')[0] : null,
+        dueDate: t.dueDate ? t.dueDate.split('T')[0] : null,
+        estimatedHours: t.estimatedHours || 0,
+        actualHours: t.actualHours || 0,
+        storyPoints: t.storyPoints || 0,
+        progress: frontendStatus === 'COMPLETED' ? 100 : frontendStatus === 'TO_DO' ? 0 : 50,
+        labels: [],
+        comments: 0,
+        attachments: 0,
+        createdAt: t.createdAt
+      }
+    })
+    
+    dispatch(setTasks(mapped))
+  } catch (error) {
+    dispatch(setError(error.message))
+  } finally {
+    dispatch(setLoading(false))
+  }
+}
+
+export const createTask = (projectId, taskData) => async (dispatch, getState) => {
+  dispatch(setLoading(true))
+  try {
+    const headers = getHeaders(getState())
+    let formattedDueDate = null
+    if (taskData.dueDate) {
+      formattedDueDate = taskData.dueDate.includes('T') ? taskData.dueDate : `${taskData.dueDate}T00:00:00`
+    }
+    
+    const payload = {
+      title: taskData.title,
+      description: taskData.description || '',
+      status: mapFrontendStatusToBackend(taskData.status || 'TO_DO'),
+      priority: taskData.priority || 'MEDIUM',
+      storyPoints: taskData.storyPoints || 0,
+      estimatedHours: taskData.estimatedHours || 0,
+      actualHours: taskData.actualHours || 0,
+      dueDate: formattedDueDate,
+      assigneeId: taskData.assignedTo || null
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/tasks`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload)
+    })
+    
+    if (!response.ok) throw new Error('Failed to create task')
+    const t = await response.json()
+    
+    const assigneeInitials = t.assignee?.fullName?.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) || ''
+    const frontendStatus = mapBackendStatusToFrontend(t.status)
+    const mapped = {
+      id: t.id,
+      projectId: t.project?.id,
+      projectName: t.project?.name,
+      projectKey: t.project?.key,
+      projectColor: t.project?.color || '#0052CC',
+      key: `${t.project?.key || 'TASK'}-${t.id}`,
+      title: t.title,
+      description: t.description,
+      status: frontendStatus,
+      priority: t.priority || 'MEDIUM',
+      assignedTo: t.assignee?.id || null,
+      assignedName: t.assignee?.fullName || null,
+      assignedAvatar: t.assignee?.avatarUrl || assigneeInitials,
+      assignedColor: '#0052CC',
+      reporter: t.creator?.id || null,
+      reporterName: t.creator?.fullName || null,
+      startDate: t.createdAt ? t.createdAt.split('T')[0] : null,
+      dueDate: t.dueDate ? t.dueDate.split('T')[0] : null,
+      estimatedHours: t.estimatedHours || 0,
+      actualHours: t.actualHours || 0,
+      storyPoints: t.storyPoints || 0,
+      progress: frontendStatus === 'COMPLETED' ? 100 : frontendStatus === 'TO_DO' ? 0 : 50,
+      labels: [],
+      comments: 0,
+      attachments: 0,
+      createdAt: t.createdAt
+    }
+    
+    dispatch(addTask(mapped))
+    return mapped
+  } catch (error) {
+    dispatch(setError(error.message))
+    throw error
+  } finally {
+    dispatch(setLoading(false))
+  }
+}
+
+export const updateTaskApi = (taskId, taskData) => async (dispatch, getState) => {
+  dispatch(setLoading(true))
+  try {
+    const headers = getHeaders(getState())
+    let formattedDueDate = null
+    if (taskData.dueDate) {
+      formattedDueDate = taskData.dueDate.includes('T') ? taskData.dueDate : `${taskData.dueDate}T00:00:00`
+    }
+    
+    const payload = {
+      title: taskData.title,
+      description: taskData.description || '',
+      status: mapFrontendStatusToBackend(taskData.status || 'TO_DO'),
+      priority: taskData.priority || 'MEDIUM',
+      storyPoints: taskData.storyPoints || 0,
+      estimatedHours: taskData.estimatedHours || 0,
+      actualHours: taskData.actualHours || 0,
+      dueDate: formattedDueDate,
+      assigneeId: taskData.assignedTo || null
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(payload)
+    })
+    
+    if (!response.ok) throw new Error('Failed to update task')
+    const t = await response.json()
+    
+    const assigneeInitials = t.assignee?.fullName?.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) || ''
+    const frontendStatus = mapBackendStatusToFrontend(t.status)
+    const mapped = {
+      id: t.id,
+      projectId: t.project?.id,
+      projectName: t.project?.name,
+      projectKey: t.project?.key,
+      projectColor: t.project?.color || '#0052CC',
+      key: `${t.project?.key || 'TASK'}-${t.id}`,
+      title: t.title,
+      description: t.description,
+      status: frontendStatus,
+      priority: t.priority || 'MEDIUM',
+      assignedTo: t.assignee?.id || null,
+      assignedName: t.assignee?.fullName || null,
+      assignedAvatar: t.assignee?.avatarUrl || assigneeInitials,
+      assignedColor: '#0052CC',
+      reporter: t.creator?.id || null,
+      reporterName: t.creator?.fullName || null,
+      startDate: t.createdAt ? t.createdAt.split('T')[0] : null,
+      dueDate: t.dueDate ? t.dueDate.split('T')[0] : null,
+      estimatedHours: t.estimatedHours || 0,
+      actualHours: t.actualHours || 0,
+      storyPoints: t.storyPoints || 0,
+      progress: frontendStatus === 'COMPLETED' ? 100 : frontendStatus === 'TO_DO' ? 0 : 50,
+      labels: [],
+      comments: 0,
+      attachments: 0,
+      createdAt: t.createdAt
+    }
+    
+    dispatch(updateTask(mapped))
+    return mapped
+  } catch (error) {
+    dispatch(setError(error.message))
+    throw error
+  } finally {
+    dispatch(setLoading(false))
+  }
+}
+
+export const updateTaskStatusApi = (taskId, status) => async (dispatch, getState) => {
+  try {
+    const headers = getHeaders(getState())
+    const backendStatus = mapFrontendStatusToBackend(status)
+    const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}/status?status=${backendStatus}`, {
+      method: 'PATCH',
+      headers
+    })
+    if (!response.ok) throw new Error('Failed to update task status')
+    dispatch(moveTask({ taskId, newStatus: status }))
+  } catch (error) {
+    dispatch(setError(error.message))
+  }
+}
+
+export const deleteTaskApi = (taskId) => async (dispatch, getState) => {
+  dispatch(setLoading(true))
+  try {
+    const headers = getHeaders(getState())
+    const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
+      method: 'DELETE',
+      headers
+    })
+    if (!response.ok) throw new Error('Failed to delete task')
+    dispatch(deleteTask(taskId))
+  } catch (error) {
+    dispatch(setError(error.message))
+    throw error
+  } finally {
+    dispatch(setLoading(false))
+  }
+}
+
 export default taskSlice.reducer

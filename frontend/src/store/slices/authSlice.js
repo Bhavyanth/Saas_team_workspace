@@ -1,4 +1,14 @@
 import { createSlice } from '@reduxjs/toolkit'
+import { signInWithPopup } from 'firebase/auth'
+import { auth, googleProvider } from '../../firebase'
+
+const getDynamicApiUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
+  return `http://${hostname}:8080`
+}
+
+const API_BASE_URL = getDynamicApiUrl()
 
 // Mock users for demo
 const DEMO_USERS = {
@@ -125,46 +135,157 @@ const authSlice = createSlice({
 
 export const { loginStart, loginSuccess, loginFailure, logout, updateUser, clearError, registerSuccess } = authSlice.actions
 
-// Thunks
-export const loginUser = (email, password) => (dispatch) => {
-  dispatch(loginStart())
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const user = DEMO_USERS[email.toLowerCase()]
-      const expectedPassword = DEMO_PASSWORDS[email.toLowerCase()]
-      if (user && password === expectedPassword) {
-        const token = `demo-token-${user.id}-${Date.now()}`
-        dispatch(loginSuccess({ user, token }))
-        resolve(user)
-      } else {
-        dispatch(loginFailure('Invalid email or password'))
-        reject(new Error('Invalid credentials'))
-      }
-    }, 800)
-  })
+const parseApiResponse = async (response) => {
+  const text = await response.text()
+  if (!text) {
+    return { status: response.status, ok: response.ok, body: null }
+  }
+  try {
+    const json = JSON.parse(text)
+    return { status: response.status, ok: response.ok, body: json }
+  } catch {
+    return { status: response.status, ok: response.ok, body: { message: text } }
+  }
 }
 
-export const registerUser = (data) => (dispatch) => {
+const getErrorMessage = (result, fallback) => {
+  if (result.body?.message) return result.body.message
+  if (result.body?.error) return result.body.error
+  if (!result.ok) return fallback || `Request failed with status ${result.status}`
+  return fallback
+}
+
+// Thunks
+export const loginUser = (email, password, selectedRole) => async (dispatch) => {
   dispatch(loginStart())
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const initials = data.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-      const user = {
-        id: `user-${Date.now()}`,
-        name: data.name,
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    })
+
+    const result = await parseApiResponse(response)
+    if (!result.ok) {
+      const message = getErrorMessage(result, 'Invalid email or password')
+      throw new Error(message)
+    }
+
+    const data = result.body
+
+    const fallbackRole = selectedRole?.toUpperCase() === 'MANAGER' ? 'MANAGER' : selectedRole?.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'EMPLOYEE'
+    const normalizedRole = data.role?.replace(/^ROLE_/, '') || fallbackRole
+
+    const user = {
+      id: data.id,
+      name: data.fullName,
+      email: data.email,
+      role: normalizedRole,
+      avatar: data.avatarUrl || data.fullName?.split(' ').map((part) => part[0]).join('').toUpperCase().slice(0, 2),
+      avatarColor: '#0052CC',
+      title: normalizedRole === 'MANAGER' ? 'Project Manager' : 'Team Member',
+      department: 'Engineering',
+      joinedDate: new Date().toISOString().split('T')[0],
+    }
+
+    dispatch(loginSuccess({ user, token: data.token }))
+    return user
+  } catch (error) {
+    dispatch(loginFailure(error.message || 'Login failed'))
+    throw error
+  }
+}
+
+export const loginWithGoogle = (selectedRole) => async (dispatch) => {
+  dispatch(loginStart())
+  try {
+    const result = await signInWithPopup(auth, googleProvider)
+    const firebaseUser = result.user
+    const displayName = firebaseUser.displayName || firebaseUser.email || 'Google User'
+    const initials = displayName
+      .split(' ')
+      .map((part) => part[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+
+    const role = selectedRole?.toUpperCase() === 'MANAGER' ? 'MANAGER' : selectedRole?.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'EMPLOYEE'
+    const roleToSend = role.startsWith('ROLE_') ? role : `ROLE_${role}`
+    const payload = {
+      email: firebaseUser.email,
+      fullName: displayName,
+      role: roleToSend,
+      avatarUrl: firebaseUser.photoURL || null,
+    }
+
+    const googleResp = await fetch(`${API_BASE_URL}/api/auth/register/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    const googleResult = await parseApiResponse(googleResp)
+    if (!googleResult.ok) {
+      const msg = getErrorMessage(googleResult, 'Google registration failed')
+      throw new Error(msg)
+    }
+
+    const loginResponse = googleResult.body
+    const token = loginResponse.token
+    const userRole = loginResponse.role?.replace(/^ROLE_/, '') || role
+    
+    const user = {
+      id: loginResponse.id,
+      name: loginResponse.fullName,
+      email: loginResponse.email,
+      role: userRole,
+      avatar: loginResponse.avatarUrl || initials,
+      avatarColor: '#0052CC',
+      title: userRole === 'MANAGER' ? 'Project Manager' : 'Team Member',
+      department: 'Engineering',
+      joinedDate: new Date().toISOString().split('T')[0],
+    }
+
+    dispatch(loginSuccess({ user, token }))
+    return user
+  } catch (error) {
+    const errorMessage = error?.message || 'Google sign in failed'
+    dispatch(loginFailure(errorMessage))
+    throw error
+  }
+}
+
+export const registerUser = (data) => async (dispatch) => {
+  dispatch(loginStart())
+  try {
+    const roleToSend = data.role?.startsWith('ROLE_') ? data.role : `ROLE_${data.role}`
+    const resp = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         email: data.email,
-        role: data.role || 'EMPLOYEE',
-        avatar: initials,
-        avatarColor: '#0052CC',
-        title: data.role === 'MANAGER' ? 'Team Manager' : 'Team Member',
-        department: 'Engineering',
-        joinedDate: new Date().toISOString().split('T')[0],
-      }
-      const token = `demo-token-${user.id}`
-      dispatch(registerSuccess({ user, token }))
-      resolve(user)
-    }, 800)
-  })
+        password: data.password,
+        fullName: data.name,
+        role: roleToSend,
+      }),
+    })
+
+    const result = await parseApiResponse(resp)
+    if (!result.ok) {
+      const msg = getErrorMessage(result, 'Registration failed')
+      throw new Error(msg)
+    }
+
+    const resData = result.body
+
+    const loggedIn = await dispatch(loginUser(data.email, data.password, roleToSend))
+    return loggedIn
+  } catch (error) {
+    dispatch(loginFailure(error.message || 'Registration failed'))
+    throw error
+  }
 }
 
 export default authSlice.reducer

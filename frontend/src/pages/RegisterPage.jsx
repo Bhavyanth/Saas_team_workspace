@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { Layers, Mail, Lock, User, ShieldAlert, ArrowRight, UserPlus } from 'lucide-react'
-import { registerUser } from '../store/slices/authSlice'
+import { registerUser, loginWithGoogle } from '../store/slices/authSlice'
 
 export default function RegisterPage() {
   const dispatch = useDispatch()
@@ -26,7 +26,7 @@ export default function RegisterPage() {
     } catch (err) {
       dispatch({
         type: 'ui/addToast',
-        payload: { type: 'error', title: 'Registration Failed', message: 'Could not register user. Please try again.' }
+        payload: { type: 'error', title: 'Registration Failed', message: err.message || 'Could not register user. Please try again.' }
       })
     }
   }
@@ -222,6 +222,31 @@ export default function RegisterPage() {
             )}
           </button>
         </form>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 18 }}>
+          <button
+            type="button"
+            className="btn btn-outline w-full justify-center py-2 text-base font-semibold"
+            disabled={loading}
+            onClick={async () => {
+              try {
+                const user = await dispatch(loginWithGoogle(role))
+                dispatch({
+                  type: 'ui/addToast',
+                  payload: { type: 'success', title: 'Google Signup Successful', message: `Welcome ${user.name}!` }
+                })
+                navigate('/dashboard')
+              } catch (err) {
+                dispatch({
+                  type: 'ui/addToast',
+                  payload: { type: 'error', title: 'Google Signup Failed', message: err.message || 'Could not sign up with Google.' }
+                })
+              }
+            }}
+          >
+            Continue with Google
+          </button>
+        </div>
 
         <div style={{ marginTop: 24, textAlign: 'center', fontSize: 13, color: '#6B778C' }}>
           Already have an account? <a href="/login" className="font-semibold" style={{ color: '#0052CC' }}>Sign In</a>

@@ -11,6 +11,7 @@ import AnalyticsPage from './pages/AnalyticsPage'
 import CalendarPage from './pages/CalendarPage'
 import MessagesPage from './pages/MessagesPage'
 import SettingsPage from './pages/SettingsPage'
+import EmailPage from './pages/EmailPage'
 import NotFoundPage from './pages/NotFoundPage'
 import ToastContainer from './components/common/ToastContainer'
 
@@ -53,6 +54,7 @@ export default function App() {
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="messages" element={<MessagesPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="email" element={<EmailPage />} />
 
           {/* Manager / Admin only */}
           <Route path="projects" element={
